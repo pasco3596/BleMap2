@@ -62,6 +62,6 @@ public class MyBeacon {
     }
     public String toString(){
 
-        return String.format("%s\n%s\nXÂ∫ßÊ®ô:%sYÂ∫ßÊ®ô:%s", UUID,RSSI,x,y);
+        return String.format("%s\n%s\nXç¿ïW:%sYç¿ïW:%s", UUID,RSSI,x,y);
     }
 }

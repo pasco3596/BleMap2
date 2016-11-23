@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
     private BeaconManager beaconManager;
     private static final String UUID = "00000001-1114-2345-6789-123456789121";
-    // iBeacon„ÅÆ„Éá„Éº„Çø„ÇíË™çË≠ò„Åô„Çã„Åü„ÇÅ„ÅÆParser„Éï„Ç©„Éº„Éû„ÉÉ„Éà
+    // iBeaconÇÃÉfÅ[É^ÇîFéØÇ∑ÇÈÇΩÇﬂÇÃParserÉtÉHÅ[É}ÉbÉg
     public static final String IBEACON_FORMAT = "m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24";
 
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         tv =(TextView)findViewById(R.id.textView);
 
         bt = (Button)findViewById(R.id.button);
-        bt.setOnClickListener(view -> tv.setText("„ÅÇ„ÅÇ„ÅÇ„ÅÇ„ÅÇ"));
+        bt.setOnClickListener(view -> tv.setText("Ç†Ç†Ç†Ç†Ç†"));
 
         MyDatabaseHelper mh = new MyDatabaseHelper(this);
         SQLiteDatabase db = mh.getWritableDatabase();
@@ -65,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
         beaconManager = BeaconManager.getInstanceForApplication(this);
         beaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout(IBEACON_FORMAT));
+        Log.e("Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†","aaaaaaaaaaaaaaaaaa");
     }
 
     @Override
@@ -133,15 +134,15 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             double R2 = myBeacon2.getDistance();
 
             double L =  Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-            double Œ∏ = Math.atan2((y2 - y1), (y2 - y1));
+            double É∆ = Math.atan2((y2 - y1), (y2 - y1));
 
             double cosA = (L * L + R1 * R1 - R2 * R2)/ (2 * L * R1);
             double a = Math.acos(cosA);
-            double xp1 = x1 + R1 * (Math.cos(Œ∏ + a));
-            double yp1 = y1 + R1 * (Math.sin(Œ∏ + a));
+            double xp1 = x1 + R1 * (Math.cos(É∆ + a));
+            double yp1 = y1 + R1 * (Math.sin(É∆ + a));
 
-            double xp2 = x1 + R1 * (Math.cos(Œ∏ - a));
-            double yp2 = y1 + R1 * (Math.sin(Œ∏ - a));
+            double xp2 = x1 + R1 * (Math.cos(É∆ - a));
+            double yp2 = y1 + R1 * (Math.sin(É∆ - a));
 
 
             Log.e("beacon1:","("+x1+","+y1+")");
@@ -168,9 +169,9 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
         if (requestCode == PERMISSION_REQUEST_COARSE_LOCATION) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(MainActivity.this, "Ë®±ÂèØ„Åó„Åü„Åß", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "ãñâ¬ÇµÇΩÇ≈", Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(MainActivity.this, "Ë®±ÂèØ„Åõ„Çì„Å®„Åß„Åç„Çì„Åß", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "ãñâ¬ÇπÇÒÇ∆Ç≈Ç´ÇÒÇ≈", Toast.LENGTH_SHORT).show();
             }
         } else {
             super.onRequestPermissionsResult(requestCode,permissions,grantResults);
