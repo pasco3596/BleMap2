@@ -20,16 +20,15 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
             String sql = "create table  beacons (uuid text primary key , major integer NOT NULL" +
                     " , minor integer  NOT NULL , x integer NOT NULL, y integer NOT NULL)";
             db.execSQL(sql);
-            sql = "insert into beacons values ('05f62a3d-f60f-44bc-b36e-2b80fd6c9679','1','1',0,0)";
+            sql = "insert into beacons values ('05f62a3d-f60f-44bc-b36e-2b80fd6c9679',1 , 1, 0, 0)";
 
             db.execSQL(sql);
 
-            sql = "insert into beacons values ('2f234454-cf6d-4a0f-adf2-f4911ba9ffa6','1','1',1,1)";
+            sql = "insert into beacons values ('2f234454-cf6d-4a0f-adf2-f4911ba9ffa6', 1, 1, 1, 1)";
             db.execSQL(sql);
 
-            sql = "insert into beacons values ('00000001-1114-2345-6789-123456789121','1','1',1,0)";
+            sql = "insert into beacons values ('00000001-1114-2345-6789-123456789121', 1, 1, 1, 0)";
             db.execSQL(sql);
-            Log.e("AAAAAAAAAAAAAA","OKOK");
         }catch (SQLException e){
             e.printStackTrace();
         }
@@ -45,7 +44,4 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
         }
         onCreate(db);
     }
-
-
-
 }

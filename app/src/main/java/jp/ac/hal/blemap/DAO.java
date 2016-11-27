@@ -22,8 +22,8 @@ public class DAO {
         Cursor c = db.rawQuery(sql,new String[]{UUID});
         boolean flg = c.moveToFirst();
         if(flg){
-            String major = c.getString(c.getColumnIndex("major"));
-            String minor = c.getString(c.getColumnIndex("minor"));
+            int major = c.getInt(c.getColumnIndex("major"));
+            int minor = c.getInt(c.getColumnIndex("minor"));
             int  x = c.getInt(c.getColumnIndex("x"));
             int  y = c.getInt(c.getColumnIndex("y"));
             mbeacon = new MyBeacon(UUID,RSSI,major,minor,x,y);
@@ -44,8 +44,8 @@ public class DAO {
         }
         while (flg) {
             String UUID = c.getString(c.getColumnIndex("uuid"));
-            String major = c.getString(c.getColumnIndex("major"));
-            String minor = c.getString(c.getColumnIndex("minor"));
+            int major = c.getInt(c.getColumnIndex("major"));
+            int minor = c.getInt(c.getColumnIndex("minor"));
             int  x = c.getInt(c.getColumnIndex("x"));
             int  y = c.getInt(c.getColumnIndex("y"));
             MyBeacon myBeacon = new MyBeacon(UUID, major, minor, x, y);

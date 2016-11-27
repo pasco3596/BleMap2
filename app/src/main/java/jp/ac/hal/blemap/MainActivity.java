@@ -24,6 +24,7 @@ import org.altbeacon.beacon.BeaconParser;
 import org.altbeacon.beacon.Region;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements BeaconConsumer {
@@ -39,8 +40,8 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     private BluetoothAdapter bluetoothAdapter;
 
     ListView lv;
-    List<MyBeacon> allList;
-    List<MyBeacon> alist;
+    List<MyBeacon> allBeacons;
+    List<MyBeacon> beaconList;
     TextView tv;
     Button bt;
     Handler handler = new Handler();
@@ -50,62 +51,70 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        requestPermission();
 
         tv =(TextView)findViewById(R.id.textView);
-
         bt = (Button)findViewById(R.id.button);
         bt.setOnClickListener(view -> tv.setText("Ç†Ç†Ç†Ç†Ç†"));
 
         MyDatabaseHelper mh = new MyDatabaseHelper(this);
         SQLiteDatabase db = mh.getWritableDatabase();
         DAO dao = new DAO(db);
-        allList  = dao.selectAll();
+        allBeacons  = dao.selectAll();
         db.close();
         lv = (ListView) findViewById(R.id.listView);
 
         beaconManager = BeaconManager.getInstanceForApplication(this);
         beaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout(IBEACON_FORMAT));
-        Log.e("Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†Ç†","aaaaaaaaaaaaaaaaaa");
     }
-
+    double aaa;
     @Override
     public void onBeaconServiceConnect() {
         new Thread(() -> {
             beaconManager.addRangeNotifier((beacons,region) -> {
 
                 //beacons.stream().filter(s -> s.getId1().toString() == UUID ).forEach(s -> {
-                alist = new ArrayList<>();
-                Log.d("beaconsbeacons",String.valueOf(beacons.size()));
+                beaconList = new ArrayList<>();
 
-                for (Beacon s : beacons) {
-                    Log.d("MyActivity", "UUID:" + s.getId1().toString() + ", major:" + s.getId2() +
-                    ", minor:" + s.getId3() + ", Distance:" + s.getDistance() + ", RSSI:" + s.getRssi());
+                for (Beacon beacon : beacons) {
+                    Log.d("MyActivity", "UUID:" + beacon.getId1().toString() + ", major:" + beacon.getId2() +
+                            ", minor:" + beacon.getId3() + ", Distance:"
+                            + beacon.getDistance() + ", RSSI:" + beacon.getRssi()
+                            + "txpower:" + beacon.getTxPower());
+                     /*
+                     n = 2.0 è·äQï®ÇÃÇ»Ç¢ãÛä‘
+                     n < 2.0 : ìdîgÇ™îΩéÀÇµÇ»Ç™ÇÁì`î¿Ç∑ÇÈãÛä‘
+                     n > 2.0  : è·äQï®Ç…ãzé˚Ç≥ÇÍå∏êäÇµÇ»Ç™ÇÁì`î¿Ç∑ÇÈãÛä‘
+                     ç°ÇÕÉeÉLÉgÅ[Ç»íl
+                      */
+                    double n = 2.1;
+                    aaa = Math.pow(10.0, (beacon.getTxPower() - beacon.getRssi()) / (10.0 * n));
+                    Log.e("aaaaaaaaaaaaaa",String.valueOf(aaa));
                     //
-                    //                      MyBeacon b = allList.stream().filter(m -> m.getMajor().equals(s.getId2().toString())
-                    //                              && m.getMinor().equals(s.getId3())).findFirst().orElse(null);
-                    MyBeacon b;
-                    int i = 0;
-                    while (true) {
-                        MyBeacon myBeacon = allList.get(i);
-                        String major = myBeacon.getMajor();
-                        String minor = myBeacon.getMinor();
-                        if (major.equals(s.getId2().toString()) && minor.equals(s.getId3().toString())) {
-                            b = myBeacon;
-                            break;
+                    //                      MyBeacon b = allList.stream().filter(m ->  m.getMajor().equals(s.getId2().toString())
+                    //
+                    MyBeacon myBeacon = null;
+                    for (int i = 0; i < allBeacons.size(); i++){
+                        MyBeacon mb = allBeacons.get(i);
+
+                        if(mb.getUUID().equals(beacon.getId1().toString())){
+                            int x = mb.getX();
+                            int y = mb.getY();
+                            myBeacon = new MyBeacon(beacon, x, y);
+                            beaconList.add(myBeacon);
                         }
-                     i++;
                     }
-
-                    b.setDistance(s.getDistance());
-                    b.setRSSI(s.getRssi());
-                    alist.add(b);
-                    getPosition(alist);
                 }
-       //         });
 
-
+                if (2 < beaconList.size()) {
+                    //RSSIÇÃã≠Ç¢èáÇ…É\Å[Ég
+                    Collections.sort(beaconList,new MyBeaconSort());
+                    getPosition2(beaconList);
+                }
+                       //         });
                 handler.post(() -> {
-                        ArrayAdapter<MyBeacon> arrayAdapter = new ArrayAdapter<>(MainActivity.this,android.R.layout.simple_list_item_1,alist);
+                    tv.setText(String .valueOf(aaa));
+                        ArrayAdapter<MyBeacon> arrayAdapter = new ArrayAdapter<>(MainActivity.this,android.R.layout.simple_list_item_1,beaconList);
                         lv.setAdapter(arrayAdapter);
                 });
             });
@@ -120,7 +129,6 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     }
 
     public void getPosition(List<MyBeacon> list) {
-
         for (int i = 0; i < list.size()-1; i++) {
             MyBeacon myBeacon1 = list.get(i);
             MyBeacon myBeacon2 = list.get(i+1);
@@ -136,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             double L =  Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
             double É∆ = Math.atan2((y2 - y1), (y2 - y1));
 
-            double cosA = (L * L + R1 * R1 - R2 * R2)/ (2 * L * R1);
+            double cosA = (L * L + R1 * R1 - R2 * R2) / (2 * L * R1);
             double a = Math.acos(cosA);
             double xp1 = x1 + R1 * (Math.cos(É∆ + a));
             double yp1 = y1 + R1 * (Math.sin(É∆ + a));
@@ -144,18 +152,53 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             double xp2 = x1 + R1 * (Math.cos(É∆ - a));
             double yp2 = y1 + R1 * (Math.sin(É∆ - a));
 
-
             Log.e("beacon1:","("+x1+","+y1+")");
             Log.e("beacon2:","("+x2+","+y2+")");
             Log.e("P1:","("+xp1+","+yp1+")");
             Log.e("P2:","("+xp2+","+yp2+")");
         }
     }
+
+    public void getPosition2(List<MyBeacon> list) {
+
+        for (int i = 0; i < list.size()-1 || i < 3; i++){
+            MyBeacon myBeacon1 = list.get(i);
+            for (int j = i+1; j < list.size()-1|| j < 3; j++){
+                MyBeacon myBeacon2 = list.get(j);
+
+                double x1 = myBeacon1.getX();
+                double y1 = myBeacon1.getY();
+                double x2 = myBeacon2.getX();
+                double y2 = myBeacon2.getY();
+
+                double R1 = myBeacon1.getDistance();
+                double R2 = myBeacon2.getDistance();
+
+                double L =  Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+                double É∆ = Math.atan2((y2 - y1), (y2 - y1));
+
+                double cosA = (L * L + R1 * R1 - R2 * R2) / (2 * L * R1);
+                double a = Math.acos(cosA);
+                double xp1 = x1 + R1 * (Math.cos(É∆ + a));
+                double yp1 = y1 + R1 * (Math.sin(É∆ + a));
+
+                double xp2 = x1 + R1 * (Math.cos(É∆ - a));
+                double yp2 = y1 + R1 * (Math.sin(É∆ - a));
+
+                Log.e("beacon1:","("+x1+","+y1+")");
+                Log.e("beacon2:","("+x2+","+y2+")");
+                Log.e("P1:","("+xp1+","+yp1+")");
+                Log.e("P2:","("+xp2+","+yp2+")");
+            }
+        }
+    }
+
+
+
     @Override
     protected void onResume() {
         super.onResume();
-        requestPermission();
-       // bluetoothOn();
+        bluetoothOn();
         beaconManager.bind(this);
     }
 
@@ -163,6 +206,15 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     protected void onPause() {
         beaconManager.unbind(this);
         super.onPause();
+    }
+
+    // à íuèÓïÒÇÃãñâ¬Çmarshmallowà»ç~ÇÕéÊÇÁÇ»Ç´Ç·Ç¢ÇØÇ»Ç¢
+    public void requestPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},PERMISSION_REQUEST_COARSE_LOCATION);
+            }
+        }
     }
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -177,20 +229,12 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             super.onRequestPermissionsResult(requestCode,permissions,grantResults);
         }
     }
-
+    //bluetoothÇONÇ…Ç∑ÇÈ
     public void bluetoothOn() {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (bluetoothAdapter.isEnabled()) {
+        if (!bluetoothAdapter.isEnabled()) {
             Intent btOn = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(btOn, BLUETOOTH_ENABLE);
-        }
-    }
-
-    public void requestPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},PERMISSION_REQUEST_COARSE_LOCATION);
-            }
         }
     }
 
@@ -198,7 +242,9 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         if (resultCode == RESULT_OK) {
             if (requestCode == BLUETOOTH_ENABLE) {
-                Toast.makeText(MainActivity.this, R.string.aa, Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Bluetooth ON", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(MainActivity.this, "BluetoothïtÇØÇ»Ç†Ç©ÇÒÇ≈", Toast.LENGTH_SHORT).show();
             }
         }
     }
