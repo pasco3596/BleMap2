@@ -29,6 +29,8 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
 
             sql = "insert into beacons values ('00000001-1114-2345-6789-123456789121', 1, 1, 1, 0)";
             db.execSQL(sql);
+            sql = "insert into beacons values ('ffffffff-ffff-ffff-ffff-fffffffffffe', 65535, 65535, 0, 1)";
+            db.execSQL(sql);
         }catch (SQLException e){
             e.printStackTrace();
         }

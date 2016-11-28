@@ -62,12 +62,18 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         DAO dao = new DAO(db);
         allBeacons  = dao.selectAll();
         db.close();
+
+
+        for (MyBeacon aaa : allBeacons){
+
+            Log.e("asasasasa",aaa.getUUID().toString());
+        }
         lv = (ListView) findViewById(R.id.listView);
 
         beaconManager = BeaconManager.getInstanceForApplication(this);
         beaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout(IBEACON_FORMAT));
     }
-    double aaa;
+    String aaa;
     @Override
     public void onBeaconServiceConnect() {
         new Thread(() -> {
@@ -81,15 +87,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
                             ", minor:" + beacon.getId3() + ", Distance:"
                             + beacon.getDistance() + ", RSSI:" + beacon.getRssi()
                             + "txpower:" + beacon.getTxPower());
-                     /*
-                     n = 2.0 è·äQï®ÇÃÇ»Ç¢ãÛä‘
-                     n < 2.0 : ìdîgÇ™îΩéÀÇµÇ»Ç™ÇÁì`î¿Ç∑ÇÈãÛä‘
-                     n > 2.0  : è·äQï®Ç…ãzé˚Ç≥ÇÍå∏êäÇµÇ»Ç™ÇÁì`î¿Ç∑ÇÈãÛä‘
-                     ç°ÇÕÉeÉLÉgÅ[Ç»íl
-                      */
-                    double n = 2.1;
-                    aaa = Math.pow(10.0, (beacon.getTxPower() - beacon.getRssi()) / (10.0 * n));
-                    Log.e("aaaaaaaaaaaaaa",String.valueOf(aaa));
+
                     //
                     //                      MyBeacon b = allList.stream().filter(m ->  m.getMajor().equals(s.getId2().toString())
                     //
@@ -105,15 +103,16 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
                         }
                     }
                 }
-
-                if (2 < beaconList.size()) {
+                if (2 <= beaconList.size()) {
+                    Log.e("sizesizesize:",String.valueOf(beaconList.size()));
                     //RSSIÇÃã≠Ç¢èáÇ…É\Å[Ég
                     Collections.sort(beaconList,new MyBeaconSort());
                     getPosition2(beaconList);
+
                 }
                        //         });
                 handler.post(() -> {
-                    tv.setText(String .valueOf(aaa));
+                    tv.setText(aaa);
                         ArrayAdapter<MyBeacon> arrayAdapter = new ArrayAdapter<>(MainActivity.this,android.R.layout.simple_list_item_1,beaconList);
                         lv.setAdapter(arrayAdapter);
                 });
@@ -138,6 +137,10 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             double x2 = myBeacon2.getX();
             double y2 = myBeacon2.getY();
 
+
+
+
+
             double R1 = myBeacon1.getDistance();
             double R2 = myBeacon2.getDistance();
 
@@ -160,10 +163,13 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     }
 
     public void getPosition2(List<MyBeacon> list) {
+        for (MyBeacon sa : list){
 
-        for (int i = 0; i < list.size()-1 || i < 3; i++){
+            aaa = "position1" + String.valueOf(sa.getDistance());
+        }
+        for (int i = 0; i < list.size() -1; i++){
             MyBeacon myBeacon1 = list.get(i);
-            for (int j = i+1; j < list.size()-1|| j < 3; j++){
+            for (int j = i+1; j < list.size() ; j++){
                 MyBeacon myBeacon2 = list.get(j);
 
                 double x1 = myBeacon1.getX();
@@ -179,6 +185,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
                 double cosA = (L * L + R1 * R1 - R2 * R2) / (2 * L * R1);
                 double a = Math.acos(cosA);
+
                 double xp1 = x1 + R1 * (Math.cos(É∆ + a));
                 double yp1 = y1 + R1 * (Math.sin(É∆ + a));
 
@@ -189,6 +196,11 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
                 Log.e("beacon2:","("+x2+","+y2+")");
                 Log.e("P1:","("+xp1+","+yp1+")");
                 Log.e("P2:","("+xp2+","+yp2+")");
+
+                Position position = new Position();
+                position.setPositionX(xp1);
+                position.setPositionY(yp1);
+
             }
         }
     }
