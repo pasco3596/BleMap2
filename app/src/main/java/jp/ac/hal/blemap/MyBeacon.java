@@ -8,20 +8,24 @@ import org.altbeacon.beacon.Beacon;
 public class MyBeacon {
 
     private String UUID;
-    private int  RSSI;
+    private int RSSI;
+    private String name;
+    private String discription;
     private int txpower;
     private int major;
     private int minor;
     private int x;
     private int y;
+    private double distance;
 
     public String getUUID() {
         return UUID;
     }
 
-    public int  getRSSI() {
+    public int getRSSI() {
         return RSSI;
     }
+
     public void setRSSI(int RSSI) {
         this.RSSI = RSSI;
     }
@@ -33,22 +37,25 @@ public class MyBeacon {
     public int getMinor() {
         return minor;
     }
-    public int getX(){
+
+    public int getX() {
         return x;
     }
-    public int getY(){
+
+    public int getY() {
         return y;
     }
-    public double getDistance(){
+
+    public double getDistance() {
         /*
         n = 2.0 è·äQï®ÇÃÇ»Ç¢ãÛä‘
         n < 2.0 : ìdîgÇ™îΩéÀÇµÇ»Ç™ÇÁì`î¿Ç∑ÇÈãÛä‘
         n > 2.0  : è·äQï®Ç…ãzé˚Ç≥ÇÍå∏êäÇµÇ»Ç™ÇÁì`î¿Ç∑ÇÈãÛä‘
         ç°ÇÕÉeÉLÉgÅ[Ç»íl
         */
-        double n = 2.1;
-        double distance = Math.pow(10.0, (getTxpower() - getRSSI()) / (10.0 * n));
-
+//        double n = 2.1;
+//        double distance = Math.pow(10.0, (getTxpower() - getRSSI()) / (10.0 * n));
+//
         return distance;
     }
 
@@ -60,7 +67,8 @@ public class MyBeacon {
         this.txpower = txpower;
     }
 
-    public MyBeacon(String UUID, int RSSI, int major, int minor , int x , int y){
+
+    public MyBeacon(String UUID, int RSSI, int major, int minor, int x, int y) {
         this.UUID = UUID;
         this.RSSI = RSSI;
         this.major = major;
@@ -68,26 +76,41 @@ public class MyBeacon {
         this.x = x;
         this.y = y;
     }
-    public MyBeacon(String UUID, int major, int minor , int x , int y){
+
+    public MyBeacon(String UUID, int major, int minor, int x, int y) {
         this.UUID = UUID;
         this.major = major;
         this.minor = minor;
         this.x = x;
         this.y = y;
     }
+
     public MyBeacon(Beacon beacon, int x, int y) {
         this.UUID = beacon.getId1().toString();
         this.RSSI = beacon.getRssi();
         this.major = beacon.getId2().toInt();
         this.minor = beacon.getId3().toInt();
         this.txpower = beacon.getTxPower();
+        this.distance = beacon.getDistance();
         this.x = x;
         this.y = y;
     }
 
+    public MyBeacon(String uuid, int major, int minor, String name, String discription, int x, int y) {
+        this.UUID = uuid;
+        this.major = major;
+        this.minor = minor;
+        this.name = name;
+        this.discription = discription;
+        this.x = x;
+        this.y = y;
+    }
 
-    public String toString(){
+    public String getName() {
+        return name;
+    }
 
-        return String.format("%s\n%s\nXç¿ïW:%sYç¿ïW:%s", UUID,RSSI,x,y);
+    public String getDiscription() {
+        return discription;
     }
 }

@@ -12,21 +12,21 @@ import java.util.List;
 public class DAO {
     private SQLiteDatabase db;
 
-    public DAO(SQLiteDatabase db){
-        this.db=db;
+    public DAO(SQLiteDatabase db) {
+        this.db = db;
     }
 
-    public MyBeacon select(String UUID,int RSSI) {
+    public MyBeacon select(String UUID, int RSSI) {
         MyBeacon mbeacon = null;
         String sql = "select * from beacons where uuid = ?";
-        Cursor c = db.rawQuery(sql,new String[]{UUID});
+        Cursor c = db.rawQuery(sql, new String[]{UUID});
         boolean flg = c.moveToFirst();
-        if(flg){
+        if (flg) {
             int major = c.getInt(c.getColumnIndex("major"));
             int minor = c.getInt(c.getColumnIndex("minor"));
-            int  x = c.getInt(c.getColumnIndex("x"));
-            int  y = c.getInt(c.getColumnIndex("y"));
-            mbeacon = new MyBeacon(UUID,RSSI,major,minor,x,y);
+            int x = c.getInt(c.getColumnIndex("x"));
+            int y = c.getInt(c.getColumnIndex("y"));
+            mbeacon = new MyBeacon(UUID, RSSI, major, minor, x, y);
 
         }
         return mbeacon;
@@ -37,7 +37,7 @@ public class DAO {
         boolean flg = false;
         String sql = "select * from beacons";
 
-        Cursor c = db.rawQuery(sql,null);
+        Cursor c = db.rawQuery(sql, null);
 
         if (null != c) {
             flg = c.moveToFirst();
@@ -46,8 +46,8 @@ public class DAO {
             String UUID = c.getString(c.getColumnIndex("uuid"));
             int major = c.getInt(c.getColumnIndex("major"));
             int minor = c.getInt(c.getColumnIndex("minor"));
-            int  x = c.getInt(c.getColumnIndex("x"));
-            int  y = c.getInt(c.getColumnIndex("y"));
+            int x = c.getInt(c.getColumnIndex("x"));
+            int y = c.getInt(c.getColumnIndex("y"));
             MyBeacon myBeacon = new MyBeacon(UUID, major, minor, x, y);
             list.add(myBeacon);
             flg = c.moveToNext();
