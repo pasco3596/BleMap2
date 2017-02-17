@@ -1,7 +1,5 @@
 package jp.ac.hal.blemap;
 
-import java.util.UUID;
-
 /**
  * Created by pasuco on 2017/01/27.
  */
@@ -79,5 +77,9 @@ public class Item {
         this.discription = discription;
         this.x = x;
         this.y = y;
+    }
+
+    public String toString() {
+        return getName();
     }
 }

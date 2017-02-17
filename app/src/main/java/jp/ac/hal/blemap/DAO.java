@@ -16,21 +16,21 @@ public class DAO {
         this.db = db;
     }
 
-    public MyBeacon select(String UUID, int RSSI) {
-        MyBeacon mbeacon = null;
-        String sql = "select * from beacons where uuid = ?";
-        Cursor c = db.rawQuery(sql, new String[]{UUID});
-        boolean flg = c.moveToFirst();
-        if (flg) {
-            int major = c.getInt(c.getColumnIndex("major"));
-            int minor = c.getInt(c.getColumnIndex("minor"));
-            int x = c.getInt(c.getColumnIndex("x"));
-            int y = c.getInt(c.getColumnIndex("y"));
-            mbeacon = new MyBeacon(UUID, RSSI, major, minor, x, y);
-
-        }
-        return mbeacon;
-    }
+//    public MyBeacon select(String UUID, int RSSI) {
+//        MyBeacon mbeacon = null;
+//        String sql = "select * from beacons where uuid = ?";
+//        Cursor c = db.rawQuery(sql, new String[]{UUID});
+//        boolean flg = c.moveToFirst();
+//        if (flg) {
+//            int major = c.getInt(c.getColumnIndex("major"));
+//            int minor = c.getInt(c.getColumnIndex("minor"));
+//            int x = c.getInt(c.getColumnIndex("x"));
+//            int y = c.getInt(c.getColumnIndex("y"));
+//            mbeacon = new MyBeacon(UUID, RSSI, major, minor, x, y);
+//
+//        }
+//        return mbeacon;
+//    }
 
     public List<MyBeacon> selectAll() {
         List<MyBeacon> list = new ArrayList<>();
@@ -38,7 +38,6 @@ public class DAO {
         String sql = "select * from beacons";
 
         Cursor c = db.rawQuery(sql, null);
-
         if (null != c) {
             flg = c.moveToFirst();
         }
@@ -52,7 +51,6 @@ public class DAO {
             list.add(myBeacon);
             flg = c.moveToNext();
         }
-
 
         return list;
     }

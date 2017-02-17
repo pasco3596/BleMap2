@@ -4,7 +4,6 @@ import android.content.Context;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
 
 /**
  * Created by pasuco on 2016/06/03.
@@ -18,21 +17,29 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
 
     public void onCreate(SQLiteDatabase db) {
         try {
-            String sql = "create table  beacons (uuid text primary key , major integer NOT NULL" +
-                    " , minor integer  NOT NULL , x integer NOT NULL, y integer NOT NULL)";
+            String sql = "create table  beacons (uuid text, major integer NOT NULL, " +
+                    "minor integer  NOT NULL, x integer NOT NULL, y integer NOT NULL, " +
+                    "primary key(uuid, major, minor))";
             db.execSQL(sql);
-            sql = "insert into beacons values ('05f62a3d-f60f-44bc-b36e-2b80fd6c9679',1 , 1, 10, 10)";
+            sql = "insert into beacons values ('b0fc4601-14a6-43a1-abcd-cb9cfddb4013', 3, 13153, -4, -4)";//1
             db.execSQL(sql);
-            sql = "insert into beacons values ('00000001-1114-2345-6789-123456789121', 1, 1, 11, 10)";
+            sql = "insert into beacons values ('b0fc4601-14a6-43a1-abcd-cb9cfddb4013', 3, 13154, -4, 0)";//1
             db.execSQL(sql);
-            sql = "insert into beacons values ('00000000-0000-0000-0000-000000000002', 65535, 65535, 10, 11)";
+            sql = "insert into beacons values ('b0fc4601-14a6-43a1-abcd-cb9cfddb4013', 3, 13156, 0, 0)";//1
             db.execSQL(sql);
-            sql = "insert into beacons values ('00000000-0000-0000-0000-000000000001', 65535, 65535, 11, 11)";
+            sql = "insert into beacons values ('b0fc4601-14a6-43a1-abcd-cb9cfddb4013', 3, 13157, 4, 0)";//2
+            db.execSQL(sql);
+            sql = "insert into beacons values ('b0fc4601-14a6-43a1-abcd-cb9cfddb4013', 3, 13159, 0, -4)";//2
+            db.execSQL(sql);
+            sql = "insert into beacons values ('b0fc4601-14a6-43a1-abcd-cb9cfddb4013', 3, 13160, 0, 4)";//3
+            db.execSQL(sql);
+            sql = "insert into beacons values ('b0fc4601-14a6-43a1-abcd-cb9cfddb4013', 3, 13161, -4, 4)";//4
+            db.execSQL(sql);
+            sql = "insert into beacons values ('b0fc4601-14a6-43a1-abcd-cb9cfddb4013', 3, 13162, 4, 4)";//4
             db.execSQL(sql);
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
     }
 
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
