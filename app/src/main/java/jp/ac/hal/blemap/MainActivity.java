@@ -1,28 +1,31 @@
 package jp.ac.hal.blemap;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
-
+import android.view.GestureDetector;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconConsumer;
 import org.altbeacon.beacon.BeaconManager;
 import org.altbeacon.beacon.BeaconParser;
+import org.altbeacon.beacon.Identifier;
 import org.altbeacon.beacon.Region;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,14 +35,19 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
     // iBeaconのデータを認識するためのParserフォーマット
     public static final String IBEACON_FORMAT = "m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24";
-    public static final String URL = "http://pasuco234lab.xyz/user/getitem";
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
     private static final int BLUETOOTH_ENABLE = 1;
+    private static final int DETAIL_CODE = 2;
 
     private BeaconManager beaconManager;
     private BluetoothAdapter bluetoothAdapter;
 
-    List<MyBeacon> allBeacons;
+    private GestureDetector gestureDetector;
+    private AlertDialog dialog;
+    private AlertDialog.Builder builder;
+
+    static List<Item> items;
+    static List<MyBeacon> allBeacons;
     List<MyBeacon> beaconList;
 
     Handler handler = new Handler();
@@ -47,6 +55,8 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     ArrayAdapter<MyBeacon> arrayAdapter;
     MyMapView mmv;
     int finish = 0;
+    Identifier identifier = Identifier.parse("b0fc4601-14a6-43a1-abcd-cb9cfddb4013");
+    Global global;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,26 +65,50 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         requestPermission();
         mmv = (MyMapView) findViewById(R.id.mapview);
         allBeacons = new ArrayList<>();
-        getJson();
-        MyDatabaseHelper mh = new MyDatabaseHelper(this);
-        SQLiteDatabase db = mh.getWritableDatabase();
-        DAO dao = new DAO(db);
-        allBeacons = dao.selectAll();
-        db.close();
+        global = (Global) getApplication();
+        global.init();
+        allBeacons = global.allbeacons;
+        items = global.items;
 
-//        lv = (ListView) findViewById(R.id.listView);
-//
-//        lv.setOnItemClickListener((parent, view, position, id) -> {
-//            ListView listView = (ListView) parent;
-//            MyBeacon myBeacon = (MyBeacon) listView.getItemAtPosition(position);
-//            String targetUUID = myBeacon.getUUID();
-//            Intent intent = new Intent(MainActivity.this, DetailActivity.class);
-//            intent.putExtra("uuid", targetUUID);
-//            startActivity(intent);
-//        });
+
+        gestureDetector = new GestureDetector(this, new GestureDetector.OnGestureListener() {
+
+            @Override
+            public boolean onDown(MotionEvent e) {
+                return true;
+            }
+
+            @Override
+            public void onShowPress(MotionEvent e) {
+
+            }
+
+            @Override
+            public boolean onSingleTapUp(MotionEvent e) {
+                return true;
+            }
+
+            @Override
+            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+                return false;
+            }
+
+            @Override
+            public void onLongPress(MotionEvent e) {
+                createDialog();
+                dialog.show();
+
+            }
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                return false;
+            }
+        });
 
         beaconManager = BeaconManager.getInstanceForApplication(this);
         beaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout(IBEACON_FORMAT));
+
     }
 
     @Override
@@ -91,7 +125,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
                     MyBeacon myBeacon = null;
                     for (int i = 0; i < allBeacons.size(); i++) {
                         MyBeacon mb = allBeacons.get(i);
-                        if (mb.getUUID().equals(beacon.getId1().toString())) {
+                        if (mb.getMinor() == beacon.getId3().toInt()) {
                             int x = mb.getX();
                             int y = mb.getY();
                             myBeacon = new MyBeacon(beacon, x, y);
@@ -101,18 +135,15 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
                 }
                 handler.post(() -> {
-                    if (2 <= beaconList.size()) {
-                        //RSSIの強い順にソート
 
+                    if (2 < beaconList.size()) {
                         Collections.sort(beaconList, new MyBeaconSort());
-
                         getPosition(beaconList);
                     }
-                    arrayAdapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, beaconList);
                 });
             });
             try {
-                beaconManager.startRangingBeaconsInRegion(new Region("unique-ranging-region-id", null, null, null));
+                beaconManager.startRangingBeaconsInRegion(new Region("unique-ranging-region-id", identifier, null, null));
                 Log.e("START BEACON", "START BEACON");
             } catch (RemoteException e) {
                 e.printStackTrace();
@@ -122,11 +153,10 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
     // ユーザーの現在地点
     public void getPosition(List<MyBeacon> list) {
-
+        setPositions2(list);
         positions = new ArrayList<>();
         for (int i = 0; i < list.size() - 2; i++) {
             MyBeacon myBeacon1 = list.get(i);
-            Log.e("start", "1");
             double x1 = myBeacon1.getX();
             double y1 = myBeacon1.getY();
             for (int j = i + 1; j < list.size() - 1; j++) {
@@ -135,9 +165,8 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
                 double x2 = myBeacon2.getX();
                 double y2 = myBeacon2.getY();
 
-                Log.e("start", "2");
                 for (int k = i + 2; k < list.size(); k++) {
-                    Log.e("start", "3");
+
                     MyBeacon myBeacon3 = list.get(k);
                     double x3 = myBeacon3.getX();
                     double y3 = myBeacon3.getY();
@@ -167,15 +196,11 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
                     double x = (rra - rrb + xxxx) / (2 * xx);
                     double y = (rra - rrc + xxxx2 + yyyy2) / (2 * yy2) - ((xx2 / yy2) * x);
 
-                    double targetX = (y * Math.sin(rad)) + (x * Math.cos(rad));
+                    double targetX = (y * Math.sin(rad)) - (x * Math.cos(rad));
                     double targetY = (x * Math.sin(rad)) + (y * Math.cos(rad));
 
                     targetX += x1;
                     targetY += y1;
-
-                    Log.e("beacon::", String.valueOf(r1));
-                    Log.e("beacon::", String.valueOf(r2));
-                    Log.e("beacinDis::", String.valueOf(r3));
 
                     if (!Double.isNaN(targetX) && !Double.isNaN(targetY) && !Double.isInfinite(targetX) && !Double.isInfinite(targetY)) {
                         positions.add(new Position(targetX, targetY));
@@ -192,10 +217,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             }
             float ax = (float) (dx / positions.size());
             float by = (float) (dy / positions.size());
-            Log.e("PositonSize",positions.size()+"");
-            mmv.setMapPositon(ax, by);
-            Log.e("targetX::", String.valueOf(ax));
-            Log.e("targetY::", String.valueOf(by));
+            mmv.setMapPosition(ax, by);
 
         }
     }
@@ -246,66 +268,82 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        if (resultCode == RESULT_OK) {
-            if (requestCode == BLUETOOTH_ENABLE) {
-                Toast.makeText(MainActivity.this, "Bluetooth ON", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(MainActivity.this, "Bluetooth failed", Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            finish++;
-            if (finish == 2) {
-                finish = 0;
-                Toast.makeText(MainActivity.this, "Bluetooth ONじゃないと使えないよ", Toast.LENGTH_SHORT).show();
-                finish();
-            }
-        }
-    }
 
-    public void getJson() {
-        AsyncJsonLoader asyncJsonLoader = new AsyncJsonLoader(new AsyncJsonLoader.AsyncCallback() {
-            @Override
-            public void preExecute() {
-
-            }
-
-            @Override
-            public void postExecute(JSONObject result) {
-                if (result == null) {
-                    return;
-                }
-                try {
-                    JSONArray array = result.getJSONArray("items");
-                    Log.e("Object",array.toString());
-                    Log.e("Object",array.length()+"");
-                    for (int i = 0; i < array.length(); i++) {
-                        JSONObject object = array.getJSONObject(i);
-                        MyBeacon myBeacon3 = new MyBeacon(object.getString("uuid"), object.getInt("major"), object.getInt("minor"),
-                                object.getString("name"), object.getString("description"), object.getInt("x"), object.getInt("y"));
-
-                        Log.e("Beacon",myBeacon3.getUUID());
+        switch (requestCode) {
+            case BLUETOOTH_ENABLE:
+                if (resultCode == RESULT_OK) {
+                    Toast.makeText(MainActivity.this, "Bluetooth ON", Toast.LENGTH_SHORT).show();
+                } else {
+                    finish++;
+                    if (finish == 2) {
+                        finish = 0;
+                        Toast.makeText(MainActivity.this, "Bluetooth ONじゃないと使えないよ", Toast.LENGTH_SHORT).show();
+                        finish();
                     }
-                    Log.e("aaasasasafafsdvcsd", allBeacons.size() + "");
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
                 }
-
-            }
-
-            @Override
-            public void progressUpdate(int progress) {
-
-            }
-
-            @Override
-            public void cancel() {
-
-            }
+                break;
+            case DETAIL_CODE:
+                if (resultCode == RESULT_OK) {
+                }
+                dialog.cancel();
+                break;
+        }
 
 
-        });
-        asyncJsonLoader.execute(URL);
     }
 
+    public void createDialog() {
+        final LayoutInflater inflater = (LayoutInflater) this.getSystemService(LAYOUT_INFLATER_SERVICE);
+
+        final View dialogView = inflater.inflate(R.layout.dialog, (ViewGroup) findViewById(R.id.layout_root));
+
+        builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("展示物一覧");
+        builder.setView(dialogView);
+        ListView lv = (ListView) dialogView.findViewById(R.id.listview);
+        lv.setOnItemClickListener((parent, view, position, id) -> {
+            ListView listView = (ListView) parent;
+            Item item = (Item) listView.getItemAtPosition(position);
+            String name = item.getName();
+            Intent intent = new Intent(MainActivity.this, ItemDetailActivity.class);
+            intent.putExtra("name", name);
+            startActivityForResult(intent, DETAIL_CODE);
+        });
+
+        ArrayAdapter<Item> arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, global.items);
+
+        lv.setAdapter(arrayAdapter);
+
+        dialog = builder.create();
+
+
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        return gestureDetector.onTouchEvent(event);
+//        return super.onTouchEvent(event);
+    }
+
+    public void setPositions2(List<MyBeacon> list) {
+        double a = 0;
+        double b = 0;
+        double c = 0;
+        double d = 0;
+        for (int i = 0; i < list.size(); i++) {
+            MyBeacon myBeacon = list.get(i);
+            double w = 1 / Math.pow(10, myBeacon.getRSSI());
+            double x = myBeacon.getX();
+            a += x / w;
+            double y = myBeacon.getY();
+            c += y / w;
+
+            b += 1 / w;
+            d = b;
+        }
+        double xx = a / b;
+        double yy = c / d;
+        Log.e("xxyyxxyy", "XX:" + xx + "YY:" + yy);
+    }
 }
